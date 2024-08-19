@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
+import time
 
 # Predefined tickers and their categories
 tickers_data = {
@@ -32,25 +33,32 @@ def get_recent_valid_date(tickers, date):
             data = yf.download(tickers, start=date, end=date + pd.Timedelta(days=1))
             if not data.empty and not data['Adj Close'].isnull().all().all():
                 return date
-        except:
-            pass
+        except Exception as e:
+            print(f"Error: {e}")
         date -= pd.Timedelta(days=1)
 
 def fetch_data(tickers, start_date, end_date):
-    data = yf.download(tickers, start=start_date, end=end_date + pd.Timedelta(days=1))['Adj Close']
+    retries = 3
+    for _ in range(retries):
+        try:
+            data = yf.download(tickers, start=start_date, end=end_date + pd.Timedelta(days=1))['Adj Close']
+            data.fillna(method='ffill', inplace=True)
+            
+            # Check if end_date has data, if not, fetch the most recent available date
+            if end_date not in data.index:
+                end_date = get_recent_valid_date(tickers, end_date)
+            
+            # Check if start_date has data, if not, fetch the most recent available date
+            if start_date not in data.index:
+                start_date = get_recent_valid_date(tickers, start_date)
+            
+            return data, start_date, end_date
+        except Exception as e:
+            print(f"Error: {e}")
+            time.sleep(5)  # Wait before retrying
     
-    # Fill missing data with the last available value
-    data.fillna(method='ffill', inplace=True)
-    
-    # Check if end_date has data, if not, fetch the most recent available date
-    if end_date not in data.index:
-        end_date = get_recent_valid_date(tickers, end_date)
-    
-    # Check if start_date has data, if not, fetch the most recent available date
-    if start_date not in data.index:
-        start_date = get_recent_valid_date(tickers, start_date)
-    
-    return data, start_date, end_date
+    st.error("No se pudo obtener datos después de varios intentos.")
+    return pd.DataFrame(), start_date, end_date
 
 # Streamlit UI
 st.title('Análisis de Crecimiento de Precios de Acciones')
@@ -64,43 +72,49 @@ if st.button('Obtener Datos y Graficar'):
     tickers = list(tickers_data.keys())
     data, start_date, end_date = fetch_data(tickers, start_date, end_date)
 
-    percentage_changes = {}
-    for ticker in tickers:
-        if ticker not in data.columns:
-            st.warning(f"No se encontró el ticker '{ticker}' en los datos.")
-            continue
-        
-        start_price = data[ticker].loc[start_date]
-        end_price = data[ticker].loc[end_date]
-        
-        # Calculate percentage change
-        percentage_change = ((end_price - start_price) / start_price) * 100
-        percentage_changes[ticker] = percentage_change
-    
-    # Create bubble chart
-    fig = go.Figure()
+    if data.empty:
+        st.error("No se pudieron descargar los datos.")
+    else:
+        percentage_changes = {}
+        for ticker in tickers:
+            if ticker not in data.columns:
+                st.warning(f"No se encontró el ticker '{ticker}' en los datos.")
+                continue
+            
+            try:
+                start_price = data[ticker].loc[start_date]
+                end_price = data[ticker].loc[end_date]
+                
+                # Calculate percentage change
+                percentage_change = ((end_price - start_price) / start_price) * 100
+                percentage_changes[ticker] = percentage_change
+            except Exception as e:
+                st.warning(f"Error al procesar el ticker '{ticker}': {e}")
 
-    for ticker, change in percentage_changes.items():
-        color = 'white' if change == 0 else ('darkgreen' if change > 0 else 'darkred')
-        size = abs(change) * 10  # Scale the size for better visualization
+        # Create bubble chart
+        fig = go.Figure()
 
-        fig.add_trace(go.Scatter(
-            x=[ticker],
-            y=[change],
-            mode='markers+text',
-            marker=dict(size=size, color=color, opacity=0.8),
-            text=[ticker],
-            textposition='middle center',
-            name=f'{ticker} ({change:.2f}%)'
-        ))
+        for ticker, change in percentage_changes.items():
+            color = 'white' if change == 0 else ('darkgreen' if change > 0 else 'darkred')
+            size = abs(change) * 10  # Scale the size for better visualization
 
-    fig.update_layout(
-        title='Cambio porcentual de precios de acciones',
-        xaxis_title='Ticker',
-        yaxis_title='Cambio Porcentual (%)',
-        xaxis=dict(tickvals=list(tickers_data.keys()), ticktext=list(tickers_data.keys())),
-        yaxis=dict(showgrid=True),
-        showlegend=False
-    )
+            fig.add_trace(go.Scatter(
+                x=[ticker],
+                y=[change],
+                mode='markers+text',
+                marker=dict(size=size, color=color, opacity=0.8),
+                text=[ticker],
+                textposition='middle center',
+                name=f'{ticker} ({change:.2f}%)'
+            ))
 
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            title='Cambio porcentual de precios de acciones',
+            xaxis_title='Ticker',
+            yaxis_title='Cambio Porcentual (%)',
+            xaxis=dict(tickvals=list(tickers_data.keys()), ticktext=list(tickers_data.keys())),
+            yaxis=dict(showgrid=True),
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
