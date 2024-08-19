@@ -32,7 +32,7 @@ stocks = {
 
 # Helper function to find the closest available date
 def get_closest_date(ticker, date):
-    data = yf.download(ticker, start=date - pd.Timedelta(days=365), end=date)['Adj Close']
+    data = yf.download(ticker, start=date - pd.Timedelta(days=365), end=date + pd.Timedelta(days=1))['Adj Close']
     available_dates = data.index
     if date in available_dates:
         return date
@@ -40,7 +40,7 @@ def get_closest_date(ticker, date):
     return closest_date
 
 # Streamlit UI
-st.title('Análisis de Cambios de Precio de Acciones Argentinas')
+st.title('Análisis Estético de Cambios de Precio de Acciones Argentinas')
 
 # Date inputs
 start_date = st.date_input("Fecha de inicio", pd.to_datetime("2023-01-01"))
@@ -76,26 +76,41 @@ if st.button('Obtener Datos y Graficar'):
     if prices:
         fig = go.Figure()
 
-        for stock, info in prices.items():
+        # Define fixed positions for aesthetic purposes
+        num_stocks = len(prices)
+        positions = [(i % 10, i // 10) for i in range(num_stocks)]  # Simple grid layout
+
+        for i, (stock, info) in enumerate(prices.items()):
+            x_pos, y_pos = positions[i]
             fig.add_trace(go.Scatter(
-                x=[stock],
-                y=[info['percentage_change']],
+                x=[x_pos],
+                y=[y_pos],
                 mode='markers+text',
                 marker=dict(
                     size=info['size'] * 10,  # Scale size for better visibility
-                    color=info['color']
+                    color=info['color'],
+                    opacity=0.8
                 ),
                 text=[stock],
-                textposition='middle center'
+                textposition='middle center',
+                showlegend=False
             ))
 
         fig.update_layout(
-            title='Cambios de Precio de Acciones Argentinas',
-            xaxis_title='Acciones',
-            yaxis_title='Cambio en Porcentaje (%)',
-            yaxis=dict(range=[min(p['percentage_change'] for p in prices.values()) - 10, 
-                              max(p['percentage_change'] for p in prices.values()) + 10]),
-            xaxis=dict(tickvals=list(prices.keys()), ticktext=list(prices.keys()))
+            title='Cambios de Precio de Acciones Argentinas (Estético)',
+            xaxis=dict(
+                title='Posición X',
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False
+            ),
+            yaxis=dict(
+                title='Posición Y',
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False
+            ),
+            plot_bgcolor='white'
         )
 
         st.plotly_chart(fig, use_container_width=True)
