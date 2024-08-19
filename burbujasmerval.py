@@ -78,7 +78,8 @@ if st.button('Obtener Datos y Graficar'):
 
         # Define fixed positions for aesthetic purposes
         num_stocks = len(prices)
-        positions = [(i % 10, i // 10) for i in range(num_stocks)]  # Simple grid layout
+        grid_size = int(np.ceil(np.sqrt(num_stocks)))  # Determine grid size
+        positions = [(i % grid_size, i // grid_size) for i in range(num_stocks)]  # Simple grid layout
 
         for i, (stock, info) in enumerate(prices.items()):
             x_pos, y_pos = positions[i]
@@ -87,7 +88,7 @@ if st.button('Obtener Datos y Graficar'):
                 y=[y_pos],
                 mode='markers+text',
                 marker=dict(
-                    size=info['size'] * 10,  # Scale size for better visibility
+                    size=info['size'] * 5,  # Adjust size scaling
                     color=info['color'],
                     opacity=0.8
                 ),
@@ -99,13 +100,11 @@ if st.button('Obtener Datos y Graficar'):
         fig.update_layout(
             title='Cambios de Precio de Acciones Argentinas (Estético)',
             xaxis=dict(
-                title='Posición X',
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False
             ),
             yaxis=dict(
-                title='Posición Y',
                 showgrid=False,
                 zeroline=False,
                 showticklabels=False
