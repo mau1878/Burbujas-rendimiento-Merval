@@ -1,8 +1,8 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 # Define the updated ticker symbols
 tickers = [
@@ -11,7 +11,7 @@ tickers = [
     "CGPA2.BA", "COME.BA", "IRSA.BA", "BYMA.BA", "TECO2.BA", "METR.BA", "CECO2.BA", "BHIP.BA", "AGRO.BA",
     "LEDE.BA", "CVH.BA", "HAVA.BA", "AUSO.BA", "VALO.BA", "SEMI.BA", "INVJ.BA", "CTIO.BA", "MORI.BA",
     "HARG.BA", "GCLA.BA", "SAMI.BA", "BOLT.BA", "MOLA.BA", "CAPX.BA", "OEST.BA", "LONG.BA", "GCDI.BA",
-    "GBAN.BA", "CELU.BA", "FERR.BA", "CADO.BA", "GAMI.BA", "PATA.BA", "CARC.BA", "BPAT.BA", "RICH.BA",
+    "GBAN.BA", "CELU.BA", "FERR.BA", "CADO.BA", "HSAT.BA", "PATA.BA", "CARC.BA", "BPAT.BA", "RICH.BA",
     "INTR.BA", "GARO.BA", "FIPL.BA", "GRIM.BA", "DYCA.BA", "POLL.BA", "DGCE.BA", "DOME.BA", "ROSE.BA",
     "RIGO.BA", "MTR.BA"
 ]
@@ -70,14 +70,28 @@ def create_plot(df):
             arrowsize=1,
             arrowwidth=1,
             arrowcolor="black",
-            ax=row['Price Variation'] + (10 if row['Price Variation'] < 0 else -10),  # Horizontal offset for arrow
+            ax=row['Price Variation'] + (20 if row['Price Variation'] < 0 else -20),  # Horizontal offset for arrow
             ay=row['Volume * Price'] * 0.5,  # Vertical offset for arrow
-            font=dict(size=12),
+            font=dict(size=12, color="black"),
             xanchor='center',
             yanchor='bottom',
-            bgcolor="white",  # Background for text to make it visible
+            bgcolor="white"  # Background for text to make it visible
         )
 
+    fig.update_layout(
+        xaxis_title="Price Variation (%)",
+        yaxis_title="Volume * Price (Log Scale)",
+        xaxis=dict(
+            title='Price Variation (%)',
+            zeroline=False
+        ),
+        yaxis=dict(
+            title='Volume * Price (Log Scale)',
+            type='log',
+            zeroline=False
+        )
+    )
+    
     return fig
 
 # Streamlit app layout
