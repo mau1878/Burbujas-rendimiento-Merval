@@ -33,7 +33,11 @@ tickers = {
 # Fetch data from Yahoo Finance
 def fetch_data(ticker):
     stock = yf.Ticker(ticker)
-    return stock.history(period="5d")  # Fetch last 5 days of data for safety
+    # Fetch last 5 days of data for safety and ensure no duplicates by resetting the index
+    df = stock.history(period="5d").reset_index()
+    # Drop duplicate dates if any
+    df = df.drop_duplicates(subset='Date')
+    return df
 
 # Calculate price variation and volume * price
 def process_data(df):
@@ -102,7 +106,7 @@ for ticker in tickers.keys():
     data_frames.append(df)
 
 # Combine all data into a single dataframe
-combined_df = pd.concat(data_frames)
+combined_df = pd.concat(data_frames).drop_duplicates(subset=['Date', 'Ticker'])  # Ensure no duplicate tickers/dates
 
 # Create the scatter plot
 scatter_plot = create_plot(combined_df)
