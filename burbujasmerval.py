@@ -1,11 +1,11 @@
+import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import streamlit as st
-import plotly.graph_objects as go
+import plotly.express as px
 
-# List of Argentine stocks with their categories
-stocks = {
+# Define the ticker symbols
+tickers = {
     "GGAL.BA": "Panel Líder", "YPFD.BA": "Panel Líder", "PAMP.BA": "Panel Líder",
     "TXAR.BA": "Panel Líder", "ALUA.BA": "Panel Líder", "CRES.BA": "Panel Líder",
     "SUPV.BA": "Panel Líder", "CEPU.BA": "Panel Líder", "BMA.BA": "Panel Líder",
@@ -30,86 +30,71 @@ stocks = {
     "DGCE.BA": "Panel General", "^MERV": "Panel Líder", "MTR.BA": "Panel General"
 }
 
-# Helper function to find the closest available date
-def get_closest_date(ticker, date):
-    data = yf.download(ticker, start=date - pd.Timedelta(days=365), end=date + pd.Timedelta(days=1))['Adj Close']
-    available_dates = data.index
-    if date in available_dates:
-        return date
-    closest_date = available_dates[available_dates.get_indexer([date], method='pad')[0]]
-    return closest_date
+# Fetch data from Yahoo Finance
+def fetch_data(ticker):
+    stock = yf.Ticker(ticker)
+    return stock.history(period="5d")  # Fetch last 5 days of data for safety
 
-# Streamlit UI
-st.title('Análisis Estético de Cambios de Precio de Acciones Argentinas')
+# Calculate price variation and volume * price
+def process_data(df):
+    df['Price Variation'] = df['Close'].pct_change() * 100  # Percentage change from previous day
+    df['Volume * Price'] = df['Volume'] * df['Close']  # Volume * Price
+    return df
 
-# Date inputs
-start_date = st.date_input("Fecha de inicio", pd.to_datetime("2023-01-01"))
-end_date = st.date_input("Fecha de finalización", pd.to_datetime("today"))
+# Create scatter plot
+def create_plot(df):
+    # Remove the first day (NaN for price variation)
+    df = df.dropna(subset=['Price Variation'])
+    
+    # Filter outliers based on interquartile range (IQR)
+    Q1 = df['Price Variation'].quantile(0.25)
+    Q3 = df['Price Variation'].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
 
-# Fetch and process data
-if st.button('Obtener Datos y Graficar'):
-    prices = {}
-    for stock in stocks.keys():
-        try:
-            # Fetch data
-            data = yf.download(stock, start=start_date - pd.Timedelta(days=365), end=end_date + pd.Timedelta(days=1))['Adj Close']
-            
-            # Get closest available dates
-            start_date_closest = get_closest_date(stock, start_date)
-            end_date_closest = get_closest_date(stock, end_date)
-            
-            if start_date_closest in data.index and end_date_closest in data.index:
-                start_price = data.loc[start_date_closest]
-                end_price = data.loc[end_date_closest]
-                percentage_change = (end_price - start_price) / start_price * 100
-                prices[stock] = {
-                    'percentage_change': percentage_change,
-                    'size': abs(percentage_change),
-                    'color': 'darkgreen' if percentage_change > 0 else 'darkred' if percentage_change < 0 else 'white'
-                }
-            else:
-                st.warning(f"No hay datos disponibles para el ticker '{stock}' en las fechas seleccionadas.")
-        except Exception as e:
-            st.error(f"Error al procesar el ticker '{stock}': {e}")
+    outliers = df[(df['Price Variation'] < lower_bound) | (df['Price Variation'] > upper_bound)]
+    non_outliers = df[(df['Price Variation'] >= lower_bound) & (df['Price Variation'] <= upper_bound)]
 
-    # Prepare data for plotting
-    if prices:
-        fig = go.Figure()
+    # Create scatter plot
+    fig = px.scatter(
+        non_outliers,
+        x='Price Variation',
+        y='Volume * Price',
+        log_y=True,
+        hover_name='Ticker',
+        title='Price Variation vs Volume * Price',
+        labels={"Price Variation": "Price Variation (%)", "Volume * Price": "Volume * Price (Log Scale)"}
+    )
 
-        # Define fixed positions for aesthetic purposes
-        num_stocks = len(prices)
-        grid_size = int(np.ceil(np.sqrt(num_stocks)))  # Determine grid size
-        positions = [(i % grid_size, i // grid_size) for i in range(num_stocks)]  # Simple grid layout
-
-        for i, (stock, info) in enumerate(prices.items()):
-            x_pos, y_pos = positions[i]
-            fig.add_trace(go.Scatter(
-                x=[x_pos],
-                y=[y_pos],
-                mode='markers+text',
-                marker=dict(
-                    size=info['size'] * 5,  # Adjust size scaling
-                    color=info['color'],
-                    opacity=0.8
-                ),
-                text=[stock],
-                textposition='middle center',
-                showlegend=False
-            ))
-
-        fig.update_layout(
-            title='Cambios de Precio de Acciones Argentinas (Estético)',
-            xaxis=dict(
-                showgrid=False,
-                zeroline=False,
-                showticklabels=False
-            ),
-            yaxis=dict(
-                showgrid=False,
-                zeroline=False,
-                showticklabels=False
-            ),
-            plot_bgcolor='white'
+    # Annotate outliers
+    for i, row in outliers.iterrows():
+        fig.add_annotation(
+            x=row['Price Variation'],
+            y=row['Volume * Price'],
+            text=row['Ticker'],
+            showarrow=True,
+            arrowhead=2
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+    return fig
+
+# Streamlit app layout
+st.title("Price Variation vs Volume * Price for Panel Líder and General Stocks")
+
+# Fetch and process data for all tickers
+data_frames = []
+for ticker in tickers.keys():
+    df = fetch_data(ticker)
+    df = process_data(df)
+    df['Ticker'] = ticker  # Add ticker as a column
+    data_frames.append(df)
+
+# Combine all data into a single dataframe
+combined_df = pd.concat(data_frames)
+
+# Create the scatter plot
+scatter_plot = create_plot(combined_df)
+
+# Display the plot in Streamlit
+st.plotly_chart(scatter_plot)
