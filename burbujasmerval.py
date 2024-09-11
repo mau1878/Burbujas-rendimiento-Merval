@@ -19,75 +19,53 @@ tickers = {
 # Fetch data from Yahoo Finance
 def fetch_data(ticker):
     stock = yf.Ticker(ticker)
-    # Fetch last 5 days of data for safety and ensure no duplicates by resetting the index
+    # Fetch data for the last 5 days
     df = stock.history(period="5d").reset_index()
     # Drop duplicate dates if any
     df = df.drop_duplicates(subset='Date')
     return df
 
-# Calculate price variation and volume * price
-def process_data(df):
-    df['Price Variation'] = df['Close'].pct_change() * 100  # Percentage change from previous day
+# Calculate the price variation only for the last trading day
+def process_last_day(df):
+    # Calculate percentage change (Price Variation) between the last available day and the day before
+    df['Price Variation'] = df['Close'].pct_change() * 100  # Percentage change from the previous day
     df['Volume * Price'] = df['Volume'] * df['Close']  # Volume * Price
-    return df
+    
+    # Only keep the last trading date row, which includes the latest Price Variation
+    last_day_df = df.iloc[-1:]  # Take the last row of the dataframe (latest trading date)
+    return last_day_df
 
 # Create scatter plot
 def create_plot(df):
-    # Remove the first day (NaN for price variation)
-    df = df.dropna(subset=['Price Variation'])
-    
-    # Filter out non-positive Volume * Price values for log scale
-    df = df[df['Volume * Price'] > 0]
-
-    # Filter outliers based on interquartile range (IQR)
-    Q1 = df['Price Variation'].quantile(0.25)
-    Q3 = df['Price Variation'].quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-
-    outliers = df[(df['Price Variation'] < lower_bound) | (df['Price Variation'] > upper_bound)]
-    non_outliers = df[(df['Price Variation'] >= lower_bound) & (df['Price Variation'] <= upper_bound)]
-
     # Dynamically adjust axis limits to avoid large empty spaces
-    min_price_var = non_outliers['Price Variation'].min() - 5  # Add margin for clarity
-    max_price_var = non_outliers['Price Variation'].max() + 5
-    min_volume_price = non_outliers['Volume * Price'].min() * 0.9
-    max_volume_price = non_outliers['Volume * Price'].max() * 1.1
+    min_price_var = df['Price Variation'].min() - 5  # Add margin for clarity
+    max_price_var = df['Price Variation'].max() + 5
+    min_volume_price = df['Volume * Price'].min() * 0.9
+    max_volume_price = df['Volume * Price'].max() * 1.1
 
     # Create scatter plot
     fig = px.scatter(
-        non_outliers,
+        df,
         x='Price Variation',
         y='Volume * Price',
         log_y=True,  # Log scale for Y-axis
         range_x=[min_price_var, max_price_var],  # Dynamic X range
         range_y=[min_volume_price, max_volume_price],  # Dynamic Y range
         hover_name='Ticker',
-        title='Price Variation vs Volume * Price',
+        title='Price Variation (Last Trading Day) vs Volume * Price',
         labels={"Price Variation": "Price Variation (%)", "Volume * Price": "Volume * Price (Log Scale)"}
     )
-
-    # Annotate outliers
-    for i, row in outliers.iterrows():
-        fig.add_annotation(
-            x=row['Price Variation'],
-            y=row['Volume * Price'],
-            text=row['Ticker'],
-            showarrow=True,
-            arrowhead=2
-        )
 
     return fig
 
 # Streamlit app layout
-st.title("Price Variation vs Volume * Price for Selected Argentine Stocks")
+st.title("Price Variation (Last Trading Day) vs Volume * Price for Selected Argentine Stocks")
 
 # Fetch and process data for all tickers
 data_frames = []
 for ticker in tickers:
     df = fetch_data(ticker)
-    df = process_data(df)
+    df = process_last_day(df)  # Only process the last trading day
     df['Ticker'] = ticker  # Add ticker as a column
     data_frames.append(df)
 
