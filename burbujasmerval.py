@@ -35,6 +35,9 @@ def create_plot(df):
     # Remove duplicates if any
     df = df.drop_duplicates()
     
+    # Ensure there are no duplicate indices
+    df = df[~df.index.duplicated(keep='first')]
+
     min_price_var = df['Price Variation'].min() - 5
     max_price_var = df['Price Variation'].max() + 5
     min_volume_price = df['Volume * Price'].min() * 0.9
@@ -93,6 +96,9 @@ for ticker in tickers:
     data_frames.append(df)
 
 combined_df = pd.concat(data_frames).drop_duplicates(subset=['Date', 'Ticker'])
+
+# Ensure the combined DataFrame does not have duplicate indices
+combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
 
 # Create the scatter plot
 plot = create_plot(combined_df)
