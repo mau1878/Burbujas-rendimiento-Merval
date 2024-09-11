@@ -3,7 +3,6 @@ import yfinance as yf
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
 # Define the updated ticker symbols
 tickers = [
@@ -33,6 +32,9 @@ def process_last_day(df):
 
 # Create scatter plot with annotations and arrows
 def create_plot(df):
+    # Remove duplicates if any
+    df = df.drop_duplicates()
+    
     min_price_var = df['Price Variation'].min() - 5
     max_price_var = df['Price Variation'].max() + 5
     min_volume_price = df['Volume * Price'].min() * 0.9
