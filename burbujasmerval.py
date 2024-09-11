@@ -70,12 +70,13 @@ def create_plot(df):
             arrowsize=1,
             arrowwidth=1,
             arrowcolor="black",
-            ax=row['Price Variation'] + (20 if row['Price Variation'] < 0 else -20),  # Horizontal offset for arrow
-            ay=row['Volume * Price'] * 0.5,  # Vertical offset for arrow
-            font=dict(size=12, color="black"),
-            xanchor='center',
-            yanchor='bottom',
-            bgcolor="white"  # Background for text to make it visible
+            ax=row['Price Variation'] + (15 if row['Price Variation'] < 0 else -15),  # Adjusted horizontal offset
+            ay=row['Volume * Price'] * 0.5,  # Adjusted vertical offset
+            font=dict(size=10, color="black"),
+            xanchor='left',
+            yanchor='top',
+            bgcolor="white",  # Background for text to make it visible
+            borderpad=4
         )
 
     fig.update_layout(
@@ -89,7 +90,8 @@ def create_plot(df):
             title='Volume * Price (Log Scale)',
             type='log',
             zeroline=False
-        )
+        ),
+        autosize=True
     )
     
     return fig
