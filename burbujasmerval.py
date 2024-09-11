@@ -3,19 +3,18 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 
 # Define the updated ticker symbols
-tickers = {
+tickers = [
     "GGAL.BA", "YPFD.BA", "PAMP.BA", "TXAR.BA", "ALUA.BA", "CRES.BA", "SUPV.BA", "CEPU.BA", "BMA.BA",
     "TGSU2.BA", "TRAN.BA", "EDN.BA", "LOMA.BA", "MIRG.BA", "DGCU2.BA", "BBAR.BA", "MOLI.BA", "TGNO4.BA",
     "CGPA2.BA", "COME.BA", "IRSA.BA", "BYMA.BA", "TECO2.BA", "METR.BA", "CECO2.BA", "BHIP.BA", "AGRO.BA",
     "LEDE.BA", "CVH.BA", "HAVA.BA", "AUSO.BA", "VALO.BA", "SEMI.BA", "INVJ.BA", "CTIO.BA", "MORI.BA",
     "HARG.BA", "GCLA.BA", "SAMI.BA", "BOLT.BA", "MOLA.BA", "CAPX.BA", "OEST.BA", "LONG.BA", "GCDI.BA",
-    "GBAN.BA", "CELU.BA", "FERR.BA", "CADO.BA", "HSAT.BA", "PATA.BA", "CARC.BA", "BPAT.BA", "RICH.BA",
+    "GBAN.BA", "CELU.BA", "FERR.BA", "CADO.BA", "GAMI.BA", "PATA.BA", "CARC.BA", "BPAT.BA", "RICH.BA",
     "INTR.BA", "GARO.BA", "FIPL.BA", "GRIM.BA", "DYCA.BA", "POLL.BA", "DGCE.BA", "DOME.BA", "ROSE.BA",
     "RIGO.BA", "MTR.BA"
-}
+]
 
 # Fetch data from Yahoo Finance
 def fetch_data(ticker):
@@ -31,7 +30,7 @@ def process_last_day(df):
     last_day_df = df.iloc[-1:]
     return last_day_df
 
-# Create scatter plot with additional features
+# Create scatter plot with annotations and arrows
 def create_plot(df):
     min_price_var = df['Price Variation'].min() - 5
     max_price_var = df['Price Variation'].max() + 5
@@ -60,20 +59,23 @@ def create_plot(df):
         xref="x", yref="y"
     )
 
-    # Add ticker names as annotations with arrows to avoid overlaps
+    # Add ticker names as annotations with arrows
     for i, row in df.iterrows():
         fig.add_annotation(
             x=row['Price Variation'],
             y=row['Volume * Price'],
             text=row['Ticker'],
-            showarrow=True,  # Show the arrow
-            arrowhead=2,  # Define arrow style
-            ax=row['Price Variation'] + (5 if row['Price Variation'] < 0 else -5),  # Dynamic arrow X offset
-            ay=row['Volume * Price'] * 0.1,  # Dynamic arrow Y offset
-            font=dict(size=10),
-            arrowcolor='black',
+            showarrow=True,
+            arrowhead=2,  
+            arrowsize=1,
+            arrowwidth=1,
+            arrowcolor="black",
+            ax=row['Price Variation'] + (10 if row['Price Variation'] < 0 else -10),  # Horizontal offset for arrow
+            ay=row['Volume * Price'] * 0.5,  # Vertical offset for arrow
+            font=dict(size=12),
             xanchor='center',
             yanchor='bottom',
+            bgcolor="white",  # Background for text to make it visible
         )
 
     return fig
