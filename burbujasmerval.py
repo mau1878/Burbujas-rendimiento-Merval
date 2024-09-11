@@ -1,8 +1,9 @@
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 
 # Define the updated ticker symbols
 tickers = [
@@ -30,71 +31,53 @@ def process_last_day(df):
     last_day_df = df.iloc[-1:]
     return last_day_df
 
-# Create scatter plot with simplified annotations
+# Create scatter plot with annotations and arrows
 def create_plot(df):
     min_price_var = df['Price Variation'].min() - 5
     max_price_var = df['Price Variation'].max() + 5
     min_volume_price = df['Volume * Price'].min() * 0.9
     max_volume_price = df['Volume * Price'].max() * 1.1
 
-    # Create scatter plot
-    fig = px.scatter(
-        df,
+    plt.figure(figsize=(12, 8))
+    
+    # Scatter plot
+    scatter = sns.scatterplot(
         x='Price Variation',
         y='Volume * Price',
-        color='Price Variation', 
-        log_y=True,
-        range_x=[min_price_var, max_price_var],
-        range_y=[min_volume_price, max_volume_price],
-        hover_name='Ticker',
-        title='Price Variation (Last Trading Day) vs Volume * Price',
-        labels={"Price Variation": "Price Variation (%)", "Volume * Price": "Volume * Price (Log Scale)"}
-    )
-
-    # Add red line separating positive and negative values
-    fig.add_shape(
-        type="line",
-        x0=0, y0=min_volume_price, x1=0, y1=max_volume_price,
-        line=dict(color="red", width=2),
-        xref="x", yref="y"
-    )
-
-    # Add ticker names as annotations with arrows
-    for i, row in df.iterrows():
-        fig.add_annotation(
-            x=row['Price Variation'],
-            y=row['Volume * Price'],
-            text=row['Ticker'],
-            showarrow=True,
-            arrowhead=2,  
-            arrowsize=1,
-            arrowwidth=1,
-            arrowcolor="black",
-            ax=row['Price Variation'] + (15 if row['Price Variation'] < 0 else -15),  # Horizontal offset for arrow
-            ay=row['Volume * Price'] + 50,  # Vertical offset for arrow
-            font=dict(size=10, color="black"),
-            xanchor='left',
-            yanchor='top',
-            bgcolor="white",  # Background for text to make it visible
-            borderpad=4
-        )
-
-    fig.update_layout(
-        xaxis_title="Price Variation (%)",
-        yaxis_title="Volume * Price (Log Scale)",
-        xaxis=dict(
-            title='Price Variation (%)',
-            zeroline=False
-        ),
-        yaxis=dict(
-            title='Volume * Price (Log Scale)',
-            type='log',
-            zeroline=False
-        ),
-        autosize=True
+        hue='Price Variation',
+        data=df,
+        palette='coolwarm',
+        s=100
     )
     
-    return fig
+    # Add red line separating positive and negative values
+    plt.axvline(x=0, color='red', linestyle='--', linewidth=2)
+    
+    # Annotate each point
+    for i, row in df.iterrows():
+        scatter.annotate(
+            row['Ticker'],
+            (row['Price Variation'], row['Volume * Price']),
+            xytext=(5, 5),
+            textcoords='offset points',
+            arrowprops=dict(
+                arrowstyle='->',
+                color='black',
+                lw=1
+            ),
+            fontsize=10
+        )
+    
+    # Formatting the y-axis to a log scale
+    plt.yscale('log')
+    plt.xlabel('Price Variation (%)')
+    plt.ylabel('Volume * Price (Log Scale)')
+    plt.title('Price Variation (Last Trading Day) vs Volume * Price')
+    
+    # Show plot grid
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+    return plt
 
 # Streamlit app layout
 st.title("Price Variation (Last Trading Day) vs Volume * Price for Selected Argentine Stocks")
@@ -110,7 +93,7 @@ for ticker in tickers:
 combined_df = pd.concat(data_frames).drop_duplicates(subset=['Date', 'Ticker'])
 
 # Create the scatter plot
-scatter_plot = create_plot(combined_df)
+plot = create_plot(combined_df)
 
 # Display the plot in Streamlit
-st.plotly_chart(scatter_plot)
+st.pyplot(plot)
