@@ -3,6 +3,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 
 # Define the updated ticker symbols
 tickers = {
@@ -35,7 +36,7 @@ def process_last_day(df):
     last_day_df = df.iloc[-1:]  # Take the last row of the dataframe (latest trading date)
     return last_day_df
 
-# Create scatter plot
+# Create scatter plot with additional features
 def create_plot(df):
     # Dynamically adjust axis limits to avoid large empty spaces
     min_price_var = df['Price Variation'].min() - 5  # Add margin for clarity
@@ -48,6 +49,7 @@ def create_plot(df):
         df,
         x='Price Variation',
         y='Volume * Price',
+        color='Price Variation',  # Color the points based on price variation
         log_y=True,  # Log scale for Y-axis
         range_x=[min_price_var, max_price_var],  # Dynamic X range
         range_y=[min_volume_price, max_volume_price],  # Dynamic Y range
@@ -55,6 +57,27 @@ def create_plot(df):
         title='Price Variation (Last Trading Day) vs Volume * Price',
         labels={"Price Variation": "Price Variation (%)", "Volume * Price": "Volume * Price (Log Scale)"}
     )
+
+    # Add red line to separate positive and negative values
+    fig.add_shape(
+        type="line",
+        x0=0, y0=min_volume_price, x1=0, y1=max_volume_price,
+        line=dict(color="red", width=2),
+        xref="x", yref="y"
+    )
+
+    # Add ticker names as annotations without overlap
+    for i, row in df.iterrows():
+        fig.add_annotation(
+            x=row['Price Variation'],
+            y=row['Volume * Price'],
+            text=row['Ticker'],
+            showarrow=False,
+            font=dict(size=10),
+            xanchor='left',
+            yanchor='bottom',
+            textangle=0
+        )
 
     return fig
 
