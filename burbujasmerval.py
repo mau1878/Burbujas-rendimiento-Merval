@@ -60,20 +60,20 @@ def create_plot(df):
         xref="x", yref="y"
     )
 
-    # Add ticker names as annotations with arrows
+    # Add ticker names as annotations with arrows to avoid overlaps
     for i, row in df.iterrows():
         fig.add_annotation(
             x=row['Price Variation'],
             y=row['Volume * Price'],
             text=row['Ticker'],
-            showarrow=True,  # Add arrows to annotations
-            arrowhead=2,  # Define the arrow style
-            ax=20,  # Offset for the arrow's x-coordinate (controls label distance)
-            ay=-30,  # Offset for the arrow's y-coordinate (controls label distance)
+            showarrow=True,  # Show the arrow
+            arrowhead=2,  # Define arrow style
+            ax=row['Price Variation'] + (5 if row['Price Variation'] < 0 else -5),  # Dynamic arrow X offset
+            ay=row['Volume * Price'] * 0.1,  # Dynamic arrow Y offset
             font=dict(size=10),
-            xanchor='left',
+            arrowcolor='black',
+            xanchor='center',
             yanchor='bottom',
-            textangle=0
         )
 
     return fig
