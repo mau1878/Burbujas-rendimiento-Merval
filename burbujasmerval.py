@@ -30,7 +30,7 @@ def process_last_day(df):
     last_day_df = df.iloc[-1:]
     return last_day_df
 
-# Create scatter plot with annotations and arrows
+# Create scatter plot with simplified annotations
 def create_plot(df):
     min_price_var = df['Price Variation'].min() - 5
     max_price_var = df['Price Variation'].max() + 5
@@ -70,8 +70,8 @@ def create_plot(df):
             arrowsize=1,
             arrowwidth=1,
             arrowcolor="black",
-            ax=row['Price Variation'] + (15 if row['Price Variation'] < 0 else -15),  # Adjusted horizontal offset
-            ay=row['Volume * Price'] * 0.5,  # Adjusted vertical offset
+            ax=row['Price Variation'] + (15 if row['Price Variation'] < 0 else -15),  # Horizontal offset for arrow
+            ay=row['Volume * Price'] + 50,  # Vertical offset for arrow
             font=dict(size=10, color="black"),
             xanchor='left',
             yanchor='top',
