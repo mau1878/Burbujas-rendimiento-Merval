@@ -4,30 +4,16 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 
-# Define the ticker symbols
+# Define the updated ticker symbols
 tickers = {
-    "GGAL.BA": "Panel Líder", "YPFD.BA": "Panel Líder", "PAMP.BA": "Panel Líder",
-    "TXAR.BA": "Panel Líder", "ALUA.BA": "Panel Líder", "CRES.BA": "Panel Líder",
-    "SUPV.BA": "Panel Líder", "CEPU.BA": "Panel Líder", "BMA.BA": "Panel Líder",
-    "TGSU2.BA": "Panel Líder", "TRAN.BA": "Panel Líder", "EDN.BA": "Panel Líder",
-    "LOMA.BA": "Panel Líder", "MIRG.BA": "Panel Líder", "DGCU2.BA": "Panel General",
-    "BBAR.BA": "Panel Líder", "MOLI.BA": "Panel General", "TGNO4.BA": "Panel Líder",
-    "CGPA2.BA": "Panel General", "COME.BA": "Panel Líder", "IRSA.BA": "Panel Líder",
-    "BYMA.BA": "Panel Líder", "TECO2.BA": "Panel Líder", "METR.BA": "Panel General",
-    "CECO2.BA": "Panel General", "BHIP.BA": "Panel General", "AGRO.BA": "Panel General",
-    "LEDE.BA": "Panel General", "CVH.BA": "Panel General", "HAVA.BA": "Panel General",
-    "AUSO.BA": "Panel General", "VALO.BA": "Panel Líder", "SEMI.BA": "Panel General",
-    "INVJ.BA": "Panel General", "CTIO.BA": "Panel General", "MORI.BA": "Panel General",
-    "HARG.BA": "Panel General", "GCLA.BA": "Panel General", "SAMI.BA": "Panel General",
-    "BOLT.BA": "Panel General", "MOLA.BA": "Panel General", "CAPX.BA": "Panel General",
-    "OEST.BA": "Panel General", "LONG.BA": "Panel General", "GCDI.BA": "Panel General",
-    "GBAN.BA": "Panel General", "CELU.BA": "Panel General", "FERR.BA": "Panel General",
-    "CADO.BA": "Panel General", "GAMI.BA": "Panel General", "PATA.BA": "Panel General",
-    "CARC.BA": "Panel General", "BPAT.BA": "Panel General", "RICH.BA": "Panel General",
-    "INTR.BA": "Panel General", "GARO.BA": "Panel General", "FIPL.BA": "Panel General",
-    "GRIM.BA": "Panel General", "DYCA.BA": "Panel General", "POLL.BA": "Panel General",
-    "DOME.BA": "Panel General", "ROSE.BA": "Panel General", "RIGO.BA": "Panel General",
-    "DGCE.BA": "Panel General", "^MERV": "Panel Líder", "MTR.BA": "Panel General"
+    "GGAL.BA", "YPFD.BA", "PAMP.BA", "TXAR.BA", "ALUA.BA", "CRES.BA", "SUPV.BA", "CEPU.BA", "BMA.BA",
+    "TGSU2.BA", "TRAN.BA", "EDN.BA", "LOMA.BA", "MIRG.BA", "DGCU2.BA", "BBAR.BA", "MOLI.BA", "TGNO4.BA",
+    "CGPA2.BA", "COME.BA", "IRSA.BA", "BYMA.BA", "TECO2.BA", "METR.BA", "CECO2.BA", "BHIP.BA", "AGRO.BA",
+    "LEDE.BA", "CVH.BA", "HAVA.BA", "AUSO.BA", "VALO.BA", "SEMI.BA", "INVJ.BA", "CTIO.BA", "MORI.BA",
+    "HARG.BA", "GCLA.BA", "SAMI.BA", "BOLT.BA", "MOLA.BA", "CAPX.BA", "OEST.BA", "LONG.BA", "GCDI.BA",
+    "GBAN.BA", "CELU.BA", "FERR.BA", "CADO.BA", "GAMI.BA", "PATA.BA", "CARC.BA", "BPAT.BA", "RICH.BA",
+    "INTR.BA", "GARO.BA", "FIPL.BA", "GRIM.BA", "DYCA.BA", "POLL.BA", "DGCE.BA", "DOME.BA", "ROSE.BA",
+    "RIGO.BA", "MTR.BA"
 }
 
 # Fetch data from Yahoo Finance
@@ -95,11 +81,11 @@ def create_plot(df):
     return fig
 
 # Streamlit app layout
-st.title("Price Variation vs Volume * Price for Panel Líder and General Stocks")
+st.title("Price Variation vs Volume * Price for Selected Argentine Stocks")
 
 # Fetch and process data for all tickers
 data_frames = []
-for ticker in tickers.keys():
+for ticker in tickers:
     df = fetch_data(ticker)
     df = process_data(df)
     df['Ticker'] = ticker  # Add ticker as a column
