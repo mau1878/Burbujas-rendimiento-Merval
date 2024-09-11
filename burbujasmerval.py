@@ -46,6 +46,9 @@ def create_plot(df):
     # Remove the first day (NaN for price variation)
     df = df.dropna(subset=['Price Variation'])
     
+    # Filter out non-positive Volume * Price values for log scale
+    df = df[df['Volume * Price'] > 0]
+
     # Filter outliers based on interquartile range (IQR)
     Q1 = df['Price Variation'].quantile(0.25)
     Q3 = df['Price Variation'].quantile(0.75)
@@ -67,7 +70,7 @@ def create_plot(df):
         non_outliers,
         x='Price Variation',
         y='Volume * Price',
-        log_y=True,
+        log_y=True,  # Log scale for Y-axis
         range_x=[min_price_var, max_price_var],  # Dynamic X range
         range_y=[min_volume_price, max_volume_price],  # Dynamic Y range
         hover_name='Ticker',
