@@ -56,12 +56,20 @@ def create_plot(df):
     outliers = df[(df['Price Variation'] < lower_bound) | (df['Price Variation'] > upper_bound)]
     non_outliers = df[(df['Price Variation'] >= lower_bound) & (df['Price Variation'] <= upper_bound)]
 
+    # Dynamically adjust axis limits to avoid large empty spaces
+    min_price_var = non_outliers['Price Variation'].min() - 5  # Add margin for clarity
+    max_price_var = non_outliers['Price Variation'].max() + 5
+    min_volume_price = non_outliers['Volume * Price'].min() * 0.9
+    max_volume_price = non_outliers['Volume * Price'].max() * 1.1
+
     # Create scatter plot
     fig = px.scatter(
         non_outliers,
         x='Price Variation',
         y='Volume * Price',
         log_y=True,
+        range_x=[min_price_var, max_price_var],  # Dynamic X range
+        range_y=[min_volume_price, max_volume_price],  # Dynamic Y range
         hover_name='Ticker',
         title='Price Variation vs Volume * Price',
         labels={"Price Variation": "Price Variation (%)", "Volume * Price": "Volume * Price (Log Scale)"}
